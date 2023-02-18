@@ -767,6 +767,14 @@ export default {
               ];
             var p: number;
             for (p = 0; p < 6; p++) {
+              if (
+                Y + dir[p][1] < 10 - (2 * (X + dir[p][0]) + 1) ||
+                Y + dir[p][1] > 10 + (2 * (X + dir[p][0]) + 1) ||
+                Y + dir[p][1] < 2 * (X + dir[p][0]) - 30 ||
+                Y + dir[p][1] > 50 - 2 * (X + dir[p][0])
+              ) {
+                continue;
+              }
               if (vis[X + dir[p][0]][Y + dir[p][1]] == -1)
                 vis[X + dir[p][0]][Y + dir[p][1]] = r + 1;
             }

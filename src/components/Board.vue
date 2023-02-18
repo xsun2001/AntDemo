@@ -88,6 +88,7 @@ export default {
       targetAntObj: nullAnt,
       targetTowerObj: nullTower,
       autoPlay: false,
+      antSet: new Set(),
     };
   },
 
@@ -394,34 +395,18 @@ export default {
         if (tmpAnt.hp <= 0 || isNaN(tmpAnt.hp)) {
           console.log("ant", tmpAnt.id, "was defeated1");
           var ID = tmpAnt.id;
-          setTimeout(() => {
-            canvas.remove(
-              canvas.getObjects().filter((element) => {
-                return element.name === "A_" + ID;
-              })[0]
-            );
-            console.log("ant", ID, "was defeated2");
-          }, 550);
+          if (this.antSet.has(ID)) {
+            this.antSet.delete(ID);
+            setTimeout(() => {
+              canvas.remove(
+                canvas.getObjects().filter((element) => {
+                  return element.name === "A_" + ID;
+                })[0]
+              );
+              console.log("ant", ID, "was defeated2");
+            }, 550);
+          }
         }
-      }
-
-      var tmpAnts = canvas.getObjects().filter((element) => {
-        return element.name && element.name[0] === "A";
-      });
-
-      for (x = 0; x < tmpAnts.length; x++) {
-        if (
-          TMPthis.ants.filter((element) => {
-            return "A_" + element.id === tmpAnts[x].name;
-          }).length == 0
-        )
-          setTimeout(() => {
-            canvas.remove(tmpAnts[x]);
-            console.log(TMPthis.ants);
-            console.log(tmpAnts);
-
-            console.log("ant", element.id, "was defeated3");
-          }, 550);
       }
 
       this.ants = this.ants.filter((element) => {
@@ -443,6 +428,7 @@ export default {
         path: [],
       };
       this.ants.push(newAnt);
+      this.antSet.add(this.numAnt);
       Location = [30 * 10, 20 * Math.sqrt(3) * 18];
 
       var imgElement = document.getElementById("antImg");

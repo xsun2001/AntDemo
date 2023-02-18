@@ -36,10 +36,13 @@
         <va-card-content>
           <h3 style="color: #003c76">血量:{{ count }}</h3>
           <h3 style="color: #003c76">金币:{{ coin }}</h3>
-          <va-button @click="oneRound"> 进行一轮 </va-button>
+          <va-button @click="oneRound" :disabled="cooldown">
+            进行一轮
+          </va-button>
           <va-button @click="buildTower" :disabled="cantBuildTower">
             建立防御塔
           </va-button>
+          <va-button @click="autoRound"> 快进 </va-button>
           <h3 style="color: #003c76">需要:{{ buildCost }}金币</h3>
         </va-card-content>
       </va-card-block>
@@ -50,6 +53,8 @@
       <img id="towerImg2" src="src/assets/tower2.png" />
       <img id="towerImg3" src="src/assets/tower3.png" />
       <img id="targetImg" src="src/assets/targetAnt.png" />
+      <img id="holeImg" src="src/assets/hole.png" />
+      <img id="castleImg" src="src/assets/castle.png" />
     </div>
   </div>
 </template>
@@ -59,6 +64,7 @@ import { fabric } from "fabric";
 var canvas;
 var nullAnt = { hp: NaN, maxHp: NaN };
 var nullTower = { level: NaN };
+var interval;
 
 export default {
   data() {
@@ -78,8 +84,10 @@ export default {
       cantBuild: true,
       targetAnt: -1,
       targetTower: -1,
+      cooldown: false,
       targetAntObj: nullAnt,
       targetTowerObj: nullTower,
+      autoPlay: false,
     };
   },
 
@@ -92,6 +100,21 @@ export default {
     },
     cantBuildTower(): boolean {
       return this.coin < this.buildCost || this.targetX === -1;
+    },
+  },
+
+  watch: {
+    autoPlay(newone, oldone) {
+      if (newone) {
+        this.cooldown = true;
+        var TMPthis = this;
+        interval = setInterval(function () {
+          TMPthis.oneRound();
+        }, 1000);
+      } else {
+        this.cooldown = false;
+        clearInterval(interval);
+      }
     },
   },
 
@@ -196,6 +219,38 @@ export default {
         canvas.add(polygon);
       }
     }
+
+    var Location: number[];
+    Location = [30 * 10, 20 * Math.sqrt(3) * 18];
+
+    var imgElement = document.getElementById("holeImg");
+    var imgInstance = new fabric.Image(imgElement, {
+      left: 120 + Location[0],
+      top: 30 + Location[1] + 10 * Math.sqrt(3),
+      originX: "center",
+      originY: "center",
+      scaleX: 0.5,
+      scaleY: 0.5,
+      selectable: false,
+    });
+    imgInstance.name = "H";
+    canvas.add(imgInstance);
+
+    Location = [30 * 10, 20 * Math.sqrt(3) * 2];
+
+    var imgElement = document.getElementById("castleImg");
+    var imgInstance = new fabric.Image(imgElement, {
+      left: 120 + Location[0],
+      top: 30 + Location[1] + 10 * Math.sqrt(3),
+      originX: "center",
+      originY: "center",
+      scaleX: 0.5,
+      scaleY: 0.5,
+      selectable: false,
+    });
+    imgInstance.name = "C";
+    canvas.add(imgInstance);
+
     var TMPthis = this;
 
     canvas.on("mouse:down", function (options) {
@@ -297,11 +352,23 @@ export default {
     canvas.renderAll();
   },
   methods: {
+    autoRound() {
+      this.autoPlay = !this.autoPlay;
+    },
+
     oneRound() {
+      if (this.autoPlay == false) {
+        this.cooldown = true;
+        setTimeout(() => {
+          this.cooldown = false;
+        }, 1000);
+      }
       this.coin++;
       if (this.round % 4 == 0) this.generateAnt();
       var x: number;
-      for (x = 0; x < this.towers.length; x++) this.towerAttack(this.towers[x]);
+      if (this.round % 2 == 0)
+        for (x = 0; x < this.towers.length; x++)
+          this.towerAttack(this.towers[x]);
       for (x = 0; x < this.ants.length; x++) {
         if (this.ants[x].hp <= 0) {
           this.coin += Math.floor(Math.sqrt(this.ants[x].maxHp - 1)) + 1;
@@ -319,7 +386,7 @@ export default {
       var TMPthis = this;
       for (x = 0; x < this.ants.length; x++) {
         var tmpAnt = TMPthis.ants[x];
-        if (tmpAnt.hp <= 0) {
+        if (tmpAnt.hp <= 0 || isNaN(tmpAnt.hp)) {
           console.log("ant", tmpAnt.id, "was defeated");
           var ID = tmpAnt.id;
           setTimeout(() => {
@@ -345,6 +412,7 @@ export default {
         id: this.numAnt,
         X: 18,
         Y: 10,
+        lastStep: -1,
         maxHp: this.newAntHP,
         hp: this.newAntHP,
         path: [],
@@ -397,13 +465,18 @@ export default {
       for (x = 0; x < 6; x++) {
         dir[x][0] += theAnt.X;
         dir[x][1] += theAnt.Y;
-        if (
+        if (dir[x][0] == 2 && dir[x][1] == 10) {
+          prob = [0, 0, 0, 0, 0, 0];
+          prob[x] = 1;
+          break;
+        } else if (
           dir[x][1] < 10 - (2 * dir[x][0] + 1) ||
           dir[x][1] > 10 + (2 * dir[x][0] + 1) ||
           dir[x][1] < 2 * dir[x][0] - 30 ||
           dir[x][1] > 50 - 2 * dir[x][0] ||
           dir[x][1] < 0 ||
-          dir[x][1] > 20
+          dir[x][1] > 20 ||
+          x == theAnt.lastStep
         )
           prob.push(0);
         else {
@@ -418,6 +491,7 @@ export default {
       for (x = 0; x < 6; x++) {
         ans -= prob[x];
         if (ans < 0) {
+          theAnt.lastStep = x;
           this.pheromone[theAnt.X][theAnt.Y][x] += 1;
           theAnt.path.push([theAnt.X, theAnt.Y, x]);
 
@@ -431,7 +505,8 @@ export default {
               20 * Math.sqrt(3) * theAnt.X + 10 * Math.sqrt(3),
             ];
           else Location = [30 * theAnt.Y, 20 * Math.sqrt(3) * theAnt.X];
-          console.log(Location);
+          var A = Location[0];
+          var B = Location[1];
 
           canvas
             .getObjects()
@@ -443,26 +518,26 @@ export default {
               setTimeout(
                 function (a, b) {
                   a.animate("left", b + 120, {
-                    duration: 500,
+                    duration: 350,
                     onChange: canvas.renderAll.bind(canvas),
                     easing: fabric.util.ease.easeInCubic,
                   });
                 },
                 600,
                 element,
-                Location[0]
+                A
               );
               setTimeout(
                 function (a, b) {
                   a.animate("top", 30 + b + 10 * Math.sqrt(3), {
-                    duration: 500,
+                    duration: 350,
                     onChange: canvas.renderAll.bind(canvas),
                     easing: fabric.util.ease.easeInCubic,
                   });
                 },
                 600,
                 element,
-                Location[1]
+                B
               );
               element.rotate(60 * x);
             });

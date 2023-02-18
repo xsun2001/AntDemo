@@ -321,6 +321,10 @@ export default {
             TMPthis.targetAntObj = TMPthis.ants.filter((element) => {
               return element.id == TMPthis.targetAnt;
             })[0];
+            if (!TMPthis.targetAntObj) {
+              TMPthis.targetAntObj = nullAnt;
+              canvas.remove(imgInstance);
+            }
           } else {
             var imgElement = document.getElementById("antImg");
             var imgInstance = new fabric.Image(imgElement, {
@@ -382,12 +386,13 @@ export default {
           }
         }
       }
-      if (this.targetAntObj.hp <= 0) this.targetAntObj = nullAnt;
+      if (this.targetAntObj && this.targetAntObj.hp <= 0)
+        this.targetAntObj = nullAnt;
       var TMPthis = this;
-      for (x = 0; x < this.ants.length; x++) {
+      for (x = 0; x < TMPthis.ants.length; x++) {
         var tmpAnt = TMPthis.ants[x];
         if (tmpAnt.hp <= 0 || isNaN(tmpAnt.hp)) {
-          console.log("ant", tmpAnt.id, "was defeated");
+          console.log("ant", tmpAnt.id, "was defeated1");
           var ID = tmpAnt.id;
           setTimeout(() => {
             canvas.remove(
@@ -395,10 +400,30 @@ export default {
                 return element.name === "A_" + ID;
               })[0]
             );
-            console.log("ant", ID, "was defeated");
+            console.log("ant", ID, "was defeated2");
           }, 550);
         }
       }
+
+      var tmpAnts = canvas.getObjects().filter((element) => {
+        return element.name && element.name[0] === "A";
+      });
+
+      for (x = 0; x < tmpAnts.length; x++) {
+        if (
+          TMPthis.ants.filter((element) => {
+            return "A_" + element.id === tmpAnts[x].name;
+          }).length == 0
+        )
+          setTimeout(() => {
+            canvas.remove(tmpAnts[x]);
+            console.log(TMPthis.ants);
+            console.log(tmpAnts);
+
+            console.log("ant", element.id, "was defeated3");
+          }, 550);
+      }
+
       this.ants = this.ants.filter((element) => {
         return element.hp > 0;
       });
@@ -439,7 +464,6 @@ export default {
     },
 
     antMove(theAnt: Ant) {
-      console.log(theAnt.id, "moves from", theAnt.X, theAnt.Y);
       var dir: number[][];
       var prob: number[] = [];
       var totProb: number = 0;
@@ -498,7 +522,6 @@ export default {
           theAnt.X = dir[x][0];
           theAnt.Y = dir[x][1];
 
-          console.log("to", theAnt.X, theAnt.Y);
           if (theAnt.Y % 2)
             Location = [
               30 * theAnt.Y,
@@ -690,13 +713,12 @@ export default {
           return element.id != this.targetTower;
         });
 
-        this.coin += 20;
+        this.coin += this.buildCost * 0.5;
 
         var oldElement = canvas.getObjects().filter((element) => {
-          return element.id == "T_" + this.targetTower;
+          return element.name === "T_" + this.targetTower;
         })[0];
 
-        imgInstance.name = oldElement.name;
         canvas.remove(oldElement);
 
         this.targetTowerObj = nullTower;

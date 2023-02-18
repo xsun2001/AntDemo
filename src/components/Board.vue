@@ -393,25 +393,33 @@ export default {
       for (x = 0; x < TMPthis.ants.length; x++) {
         var tmpAnt = TMPthis.ants[x];
         if (tmpAnt.hp <= 0 || isNaN(tmpAnt.hp)) {
+          console.log(TMPthis.ants);
+          TMPthis.ants = [
+            ...TMPthis.ants.slice(0, x),
+            ...TMPthis.ants.slice(x + 1),
+          ];
+          console.log(TMPthis.ants);
+          x = 0;
           console.log("ant", tmpAnt.id, "was defeated1");
           var ID = tmpAnt.id;
           if (this.antSet.has(ID)) {
             this.antSet.delete(ID);
-            setTimeout(() => {
-              canvas.remove(
-                canvas.getObjects().filter((element) => {
-                  return element.name === "A_" + ID;
-                })[0]
-              );
-              console.log("ant", ID, "was defeated2");
-            }, 550);
+            setTimeout(
+              (a) => {
+                canvas.remove(
+                  canvas.getObjects().filter((element) => {
+                    return element.name === "A_" + a;
+                  })[0]
+                );
+                console.log("ant", a, "was defeated2");
+              },
+              550,
+              ID
+            );
           }
         }
       }
 
-      this.ants = this.ants.filter((element) => {
-        return element.hp > 0;
-      });
       this.decayPheromon();
       canvas.renderAll();
       this.round++;

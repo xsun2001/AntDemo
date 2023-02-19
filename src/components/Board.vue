@@ -44,6 +44,7 @@
           </va-button>
           <va-button @click="autoRound"> 快进 </va-button>
           <h3 style="color: #003c76">需要:{{ buildCost }}金币</h3>
+          <h3 style="color: #d30000">{{ endMsg }}</h3>
         </va-card-content>
       </va-card-block>
     </va-card>
@@ -89,6 +90,7 @@ export default {
       targetTowerObj: nullTower,
       autoPlay: false,
       antSet: new Set(),
+      endMsg: "",
     };
   },
 
@@ -97,7 +99,7 @@ export default {
       return Math.floor(10 * Math.pow(1.5, this.towers.length));
     },
     newAntHP(): number {
-      return Math.floor(10 * Math.pow(1.005, this.round));
+      return Math.floor(10 * Math.pow(1.01, this.round));
     },
     cantBuildTower(): boolean {
       return this.coin < this.buildCost || this.targetX === -1;
@@ -110,11 +112,22 @@ export default {
         this.cooldown = true;
         var TMPthis = this;
         interval = setInterval(function () {
+          if (this.count <= 0) {
+            clearInterval(interval);
+            this.endMsg = "你失败了！\n坚持了" + this.round + "轮";
+          }
           TMPthis.oneRound();
         }, 1000);
       } else {
         this.cooldown = false;
         clearInterval(interval);
+      }
+    },
+    count(newone, oldone) {
+      if (newone <= 0) {
+        clearInterval(interval);
+        this.cooldown = true;
+        this.endMsg = "你失败了！\n坚持了" + this.round + "轮";
       }
     },
   },
@@ -260,6 +273,7 @@ export default {
 
         if (options.target.name[0] == "P") {
           var posLst = options.target.name.split("_");
+          console.log("信息素", TMPthis.pheromone[posLst[1]][posLst[2]]);
           if (posLst[1] == TMPthis.targetX && posLst[2] == TMPthis.targetY) {
             options.target.set("fill", "yellow");
             TMPthis.targetX = TMPthis.targetY = -1;
@@ -377,13 +391,16 @@ export default {
       for (x = 0; x < this.ants.length; x++) {
         if (this.ants[x].hp <= 0) {
           this.coin += Math.floor(Math.sqrt(this.ants[x].maxHp - 1)) + 1;
-          this.routePheromone(this.ants[x], -30);
+          this.routePheromone(this.ants[x], -50);
+        } else if (this.ants[x].path.length >= 40) {
+          this.ants[x].hp = 0;
+          this.routePheromone(this.ants[x], -100);
         } else {
           this.antMove(this.ants[x]);
           if (this.ants[x].X == 2 && this.ants[x].Y == 10) {
             this.count--;
             this.ants[x].hp = 0;
-            this.routePheromone(this.ants[x], 50);
+            this.routePheromone(this.ants[x], 100);
           }
         }
       }
@@ -393,14 +410,11 @@ export default {
       for (x = 0; x < TMPthis.ants.length; x++) {
         var tmpAnt = TMPthis.ants[x];
         if (tmpAnt.hp <= 0 || isNaN(tmpAnt.hp)) {
-          console.log(TMPthis.ants);
           TMPthis.ants = [
             ...TMPthis.ants.slice(0, x),
             ...TMPthis.ants.slice(x + 1),
           ];
-          console.log(TMPthis.ants);
           x = 0;
-          console.log("ant", tmpAnt.id, "was defeated1");
           var ID = tmpAnt.id;
           if (this.antSet.has(ID)) {
             this.antSet.delete(ID);
@@ -411,7 +425,6 @@ export default {
                     return element.name === "A_" + a;
                   })[0]
                 );
-                console.log("ant", a, "was defeated2");
               },
               550,
               ID
@@ -486,6 +499,7 @@ export default {
         if (dir[x][0] == 2 && dir[x][1] == 10) {
           prob = [0, 0, 0, 0, 0, 0];
           prob[x] = 1;
+          totProb = 1;
           break;
         } else if (
           dir[x][1] < 10 - (2 * dir[x][0] + 1) ||
@@ -494,7 +508,8 @@ export default {
           dir[x][1] > 50 - 2 * dir[x][0] ||
           dir[x][1] < 0 ||
           dir[x][1] > 20 ||
-          x == theAnt.lastStep
+          x - theAnt.lastStep == 3 ||
+          x - theAnt.lastStep == -3
         )
           prob.push(0);
         else {
@@ -510,8 +525,8 @@ export default {
         ans -= prob[x];
         if (ans < 0) {
           theAnt.lastStep = x;
-          this.pheromone[theAnt.X][theAnt.Y][x] += 1;
           theAnt.path.push([theAnt.X, theAnt.Y, x]);
+          this.pheromone[theAnt.X][theAnt.Y][x] += 1;
 
           theAnt.X = dir[x][0];
           theAnt.Y = dir[x][1];
@@ -772,9 +787,8 @@ export default {
                 Y + dir[p][1] > 10 + (2 * (X + dir[p][0]) + 1) ||
                 Y + dir[p][1] < 2 * (X + dir[p][0]) - 30 ||
                 Y + dir[p][1] > 50 - 2 * (X + dir[p][0])
-              ) {
+              )
                 continue;
-              }
               if (vis[X + dir[p][0]][Y + dir[p][1]] == -1)
                 vis[X + dir[p][0]][Y + dir[p][1]] = r + 1;
             }
@@ -920,12 +934,12 @@ export default {
           var p: number;
           for (p = 0; p < 6; p++) {
             if (
-              dir[p][1] < 10 - (2 * dir[p][0] + 1) ||
-              dir[p][1] > 10 + (2 * dir[p][0] + 1) ||
-              dir[p][1] < 2 * dir[p][0] - 30 ||
-              dir[p][1] > 50 - 2 * dir[p][0] ||
-              dir[p][1] < 0 ||
-              dir[p][1] > 20
+              Y + dir[p][1] < 10 - (2 * (X + dir[p][0]) + 1) ||
+              Y + dir[p][1] > 10 + (2 * (X + dir[p][0]) + 1) ||
+              Y + dir[p][1] < 2 * (X + dir[p][0]) - 30 ||
+              Y + dir[p][1] > 50 - 2 * (X + dir[p][0]) ||
+              Y + dir[p][1] < 0 ||
+              Y + dir[p][1] > 20
             )
               continue;
             this.pheromone[X][Y][p] *= 0.9;

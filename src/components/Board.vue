@@ -49,13 +49,13 @@
       </va-card-block>
     </va-card>
     <div class="details" margin-left="800" margin-top="200">
-      <img id="antImg" src="src/assets/ant.png" />
-      <img id="towerImg1" src="src/assets/tower1.png" />
-      <img id="towerImg2" src="src/assets/tower2.png" />
-      <img id="towerImg3" src="src/assets/tower3.png" />
-      <img id="targetImg" src="src/assets/targetAnt.png" />
-      <img id="holeImg" src="src/assets/hole.png" />
-      <img id="castleImg" src="src/assets/castle.png" />
+      <img id="antImg" src="/ant.png" />
+      <img id="towerImg1" src="/tower1.png" />
+      <img id="towerImg2" src="/tower2.png" />
+      <img id="towerImg3" src="/tower3.png" />
+      <img id="targetImg" src="/targetAnt.png" />
+      <img id="holeImg" src="/hole.png" />
+      <img id="castleImg" src="/castle.png" />
       <va-button @click="showModal = !showModal"> 参数设置 </va-button>
       <va-modal v-model="showModal" title="参数设置">
         <va-input class="mb-6" v-model="beginHP" label="初始蚂蚁血量" />

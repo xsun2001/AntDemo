@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import HelloWorld from "./components/HelloWorld.vue";
 import Board from "./components/Board.vue";
 </script>
 

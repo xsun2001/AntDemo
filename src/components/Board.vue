@@ -56,6 +56,17 @@
       <img id="targetImg" src="src/assets/targetAnt.png" />
       <img id="holeImg" src="src/assets/hole.png" />
       <img id="castleImg" src="src/assets/castle.png" />
+      <va-button @click="showModal = !showModal"> 参数设置 </va-button>
+      <va-modal v-model="showModal" title="参数设置">
+        <va-input class="mb-6" v-model="beginHP" label="初始蚂蚁血量" />
+        <va-input class="mb-6" v-model="rateHP" label="血量增加率" />
+        <va-input class="mb-6" v-model="pathAdd" label="每步信息素" />
+        <va-input class="mb-6" v-model="goalAdd" label="到达信息素" />
+        <va-input class="mb-6" v-model="deathAdd" label="死亡信息素" />
+        <va-input class="mb-6" v-model="oldAdd" label="老死信息素" />
+        <va-input class="mb-6" v-model="decayRate" label="衰减率" />
+        <va-input class="mb-6" v-model="minPhe" label="最小信息素" />
+      </va-modal>
     </div>
   </div>
 </template>
@@ -91,6 +102,15 @@ export default {
       autoPlay: false,
       antSet: new Set(),
       endMsg: "",
+      showModal: false,
+      beginHP: 10,
+      rateHP: 1.01,
+      minPhe: 0.001,
+      decayRate: 0.9,
+      pathAdd: 1,
+      goalAdd: 100,
+      deathAdd: -50,
+      oldAdd: -100,
     };
   },
 
@@ -99,7 +119,9 @@ export default {
       return Math.floor(10 * Math.pow(1.5, this.towers.length));
     },
     newAntHP(): number {
-      return Math.floor(10 * Math.pow(1.01, this.round));
+      return Math.floor(
+        (this.beginHP as number) * Math.pow(this.rateHP as number, this.round)
+      );
     },
     cantBuildTower(): boolean {
       return this.coin < this.buildCost || this.targetX === -1;
@@ -391,16 +413,16 @@ export default {
       for (x = 0; x < this.ants.length; x++) {
         if (this.ants[x].hp <= 0) {
           this.coin += Math.floor(Math.sqrt(this.ants[x].maxHp - 1)) + 1;
-          this.routePheromone(this.ants[x], -50);
+          this.routePheromone(this.ants[x], this.deathAdd as number);
         } else if (this.ants[x].path.length >= 40) {
           this.ants[x].hp = 0;
-          this.routePheromone(this.ants[x], -100);
+          this.routePheromone(this.ants[x], this.oldAdd as number);
         } else {
           this.antMove(this.ants[x]);
           if (this.ants[x].X == 2 && this.ants[x].Y == 10) {
             this.count--;
             this.ants[x].hp = 0;
-            this.routePheromone(this.ants[x], 100);
+            this.routePheromone(this.ants[x], this.goalAdd as number);
           }
         }
       }
@@ -526,7 +548,7 @@ export default {
         if (ans < 0) {
           theAnt.lastStep = x;
           theAnt.path.push([theAnt.X, theAnt.Y, x]);
-          this.pheromone[theAnt.X][theAnt.Y][x] += 1;
+          this.pheromone[theAnt.X][theAnt.Y][x] += (this.pathAdd as number) * 1;
 
           theAnt.X = dir[x][0];
           theAnt.Y = dir[x][1];
@@ -890,11 +912,11 @@ export default {
         if (
           this.pheromone[theAnt.path[p][0]][theAnt.path[p][1]][
             theAnt.path[p][2]
-          ] < 0.001
+          ] < (this.minPhe as number)
         )
           this.pheromone[theAnt.path[p][0]][theAnt.path[p][1]][
             theAnt.path[p][2]
-          ] = 0.001;
+          ] = this.minPhe as number;
       }
     },
 
@@ -942,9 +964,9 @@ export default {
               Y + dir[p][1] > 20
             )
               continue;
-            this.pheromone[X][Y][p] *= 0.9;
-            if (this.pheromone[X][Y][p] < 0.001)
-              this.pheromone[X][Y][p] = 0.001;
+            this.pheromone[X][Y][p] *= this.decayRate as number;
+            if (this.pheromone[X][Y][p] < (this.minPhe as number))
+              this.pheromone[X][Y][p] = this.minPhe as number;
           }
         }
     },

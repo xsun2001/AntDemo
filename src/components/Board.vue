@@ -104,7 +104,7 @@ export default {
       endMsg: "",
       showModal: false,
       beginHP: 10,
-      rateHP: 1.01,
+      rateHP: 1.005,
       minPhe: 0.001,
       decayRate: 0.9,
       pathAdd: 1,

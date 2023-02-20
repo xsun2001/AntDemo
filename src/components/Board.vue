@@ -744,7 +744,7 @@ export default {
           return element.id != this.targetTower;
         });
 
-        this.coin += this.buildCost * 0.5;
+        this.coin += Math.floor(this.buildCost * 0.5);
 
         var oldElement = canvas.getObjects().filter((element) => {
           return element.name === "T_" + this.targetTower;

@@ -916,7 +916,7 @@ export default {
         )
           this.pheromone[theAnt.path[p][0]][theAnt.path[p][1]][
             theAnt.path[p][2]
-          ] = this.minPhe as number;
+          ] = (this.minPhe as number) * 1;
       }
     },
 
@@ -966,7 +966,7 @@ export default {
               continue;
             this.pheromone[X][Y][p] *= this.decayRate as number;
             if (this.pheromone[X][Y][p] < (this.minPhe as number))
-              this.pheromone[X][Y][p] = this.minPhe as number;
+              this.pheromone[X][Y][p] = (this.minPhe as number) * 1;
           }
         }
     },

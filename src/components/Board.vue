@@ -268,9 +268,22 @@ export default {
       scaleX: 0.5,
       scaleY: 0.5,
       selectable: false,
+      objectCaching: false,
     });
     imgInstance.name = "H";
     canvas.add(imgInstance);
+    canvas.bringForward(imgInstance);
+    setTimeout(
+      function (a) {
+        a.animate("opacity", 1, {
+          duration: 350,
+          onChange: canvas.renderAll.bind(canvas),
+          easing: fabric.util.ease.easeInCubic,
+        });
+      },
+      10,
+      imgInstance
+    );
 
     Location = [30 * 10, 20 * Math.sqrt(3) * 2];
 
@@ -283,9 +296,25 @@ export default {
       scaleX: 0.5,
       scaleY: 0.5,
       selectable: false,
+      objectCaching: false,
     });
     imgInstance.name = "C";
     canvas.add(imgInstance);
+
+    canvas.bringForward(imgInstance);
+    setTimeout(
+      function (a) {
+        a.animate("opacity", 1, {
+          duration: 350,
+          onChange: canvas.renderAll.bind(canvas),
+          easing: fabric.util.ease.easeInCubic,
+        });
+      },
+      10,
+      imgInstance
+    );
+
+    canvas.renderAll();
 
     var TMPthis = this;
 

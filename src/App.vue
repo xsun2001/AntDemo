@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import Board from "./components/Board.vue";
+import ReplayBoard from "./components/ReplayBoard.vue";
+import { ref } from "vue";
+
+var replay = ref(false);
 </script>
 
 <template>
   <header></header>
 
   <main>
-    <Board />
+    <div id="app">
+      <va-switch v-model="replay">回放</va-switch>
+      <ReplayBoard v-if="replay" />
+      <Board v-else />
+    </div>
   </main>
 </template>
 

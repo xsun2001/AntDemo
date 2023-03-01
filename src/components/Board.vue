@@ -6,7 +6,7 @@
         <va-card-title>防御塔信息</va-card-title>
         <va-card-content>
           等级：{{ targetTowerObj.level }} 攻击：{{
-            targetTowerObj.level * 2
+            Math.pow(2, targetTowerObj.level)
           }}
           范围：{{ targetTowerObj.level + 3 }}
         </va-card-content>
@@ -34,6 +34,7 @@
       </va-card-block>
       <va-card-block class="flex-nowrap">
         <va-card-content>
+          <h3 style="color: #000000">轮数:{{ round }}</h3>
           <h3 style="color: #003c76">血量:{{ count }}</h3>
           <h3 style="color: #003c76">金币:{{ coin }}</h3>
           <va-button @click="oneRound" :disabled="cooldown">
@@ -42,7 +43,7 @@
           <va-button @click="buildTower" :disabled="cantBuildTower">
             建立防御塔
           </va-button>
-          <va-button @click="autoRound"> 快进 </va-button>
+          <va-button @click="autoRound"> 自动播放 </va-button>
           <h3 style="color: #003c76">需要:{{ buildCost }}金币</h3>
           <h3 style="color: #d30000">{{ endMsg }}</h3>
         </va-card-content>
@@ -65,7 +66,7 @@
         <va-input class="mb-6" v-model="deathAdd" label="死亡信息素" />
         <va-input class="mb-6" v-model="oldAdd" label="老死信息素" />
         <va-input class="mb-6" v-model="decayRate" label="衰减率" />
-        <va-input class="mb-6" v-model="minPhe" label="最小信息素" />
+        <va-input class="mb-6" v-model="basePhe" label="基准信息素" />
       </va-modal>
     </div>
   </div>
@@ -106,8 +107,9 @@ export default {
       beginHP: 10,
       rateHP: 1.005,
       minPhe: 0.001,
-      decayRate: 0.9,
-      pathAdd: 1,
+      basePhe: 0.5,
+      decayRate: 0.7,
+      pathAdd: 0,
       goalAdd: 100,
       deathAdd: -50,
       oldAdd: -100,
@@ -120,7 +122,7 @@ export default {
     },
     newAntHP(): number {
       return Math.floor(
-        (this.beginHP as number) * Math.pow(this.rateHP as number, this.round)
+        Number(this.beginHP) * Math.pow(Number(this.rateHP), this.round)
       );
     },
     cantBuildTower(): boolean {
@@ -161,21 +163,21 @@ export default {
     var X: number;
     var Y: number;
     // init canvas
-    for (X = 0; X <= 20; X++) {
+    for (X = 0; X <= 22; X++) {
       this.pheromone.push([]);
-      for (Y = 0; Y <= 20; Y++) {
+      for (Y = 0; Y <= 22; Y++) {
         this.pheromone[X].push([]);
         if (
-          Y < 10 - (2 * X + 1) ||
-          Y > 10 + (2 * X + 1) ||
-          Y < 2 * X - 30 ||
-          Y > 50 - 2 * X
+          Y < 11 - (2 * X + 1) ||
+          Y > 11 + (2 * X + 1) ||
+          Y < 2 * X - 33 ||
+          Y > 55 - 2 * X
         ) {
           continue;
         }
         var p: number;
         var dir: number[][];
-        if (Y % 2)
+        if (!(Y % 2))
           dir = [
             [-1, 0],
             [0, 1],
@@ -197,19 +199,19 @@ export default {
           dir[p][0] += X;
           dir[p][1] += Y;
           if (
-            dir[p][1] < 10 - (2 * dir[p][0] + 1) ||
-            dir[p][1] > 10 + (2 * dir[p][0] + 1) ||
-            dir[p][1] < 2 * dir[p][0] - 30 ||
-            dir[p][1] > 50 - 2 * dir[p][0] ||
+            dir[p][1] < 11 - (2 * dir[p][0] + 1) ||
+            dir[p][1] > 11 + (2 * dir[p][0] + 1) ||
+            dir[p][1] < 2 * dir[p][0] - 33 ||
+            dir[p][1] > 55 - 2 * dir[p][0] ||
             dir[p][1] < 0 ||
-            dir[p][1] > 20
+            dir[p][1] > 22
           )
             this.pheromone[X][Y].push(0);
           else this.pheromone[X][Y].push(1);
         }
 
         var Location: number[];
-        if (Y % 2)
+        if (!(Y % 2))
           Location = [30 * Y, 20 * Math.sqrt(3) * X + 10 * Math.sqrt(3)];
         else Location = [30 * Y, 20 * Math.sqrt(3) * X];
         var points: number[] = [
@@ -251,13 +253,13 @@ export default {
         });
         polygon.set("selectable", false);
         polygon.name = ("P_" + X + "_" + Y) as string;
-        if (X >= 15) polygon.set("fill", "#EEEEEE");
+        if (X >= 16) polygon.set("fill", "#EEEEEE");
         canvas.add(polygon);
       }
     }
 
     var Location: number[];
-    Location = [30 * 10, 20 * Math.sqrt(3) * 18];
+    Location = [30 * 11, 20 * Math.sqrt(3) * 20];
 
     var imgElement = document.getElementById("holeImg");
     var imgInstance = new fabric.Image(imgElement, {
@@ -285,7 +287,7 @@ export default {
       imgInstance
     );
 
-    Location = [30 * 10, 20 * Math.sqrt(3) * 2];
+    Location = [30 * 11, 20 * Math.sqrt(3) * 2];
 
     var imgElement = document.getElementById("castleImg");
     var imgInstance = new fabric.Image(imgElement, {
@@ -324,7 +326,16 @@ export default {
 
         if (options.target.name[0] == "P") {
           var posLst = options.target.name.split("_");
-          console.log("信息素", TMPthis.pheromone[posLst[1]][posLst[2]]);
+          console.log(
+            TMPthis.pheromone[posLst[1]][posLst[2]],
+            Number(TMPthis.basePhe)
+          );
+          console.log(
+            "信息素",
+            TMPthis.pheromone[posLst[1]][posLst[2]].map((x) => {
+              return x + Number(TMPthis.basePhe);
+            })
+          );
           if (posLst[1] == TMPthis.targetX && posLst[2] == TMPthis.targetY) {
             options.target.set("fill", "yellow");
             TMPthis.targetX = TMPthis.targetY = -1;
@@ -340,8 +351,8 @@ export default {
                 element.set("fill", "yellow");
               });
             options.target.set("fill", "orange");
-            TMPthis.targetX = posLst[1] as number;
-            TMPthis.targetY = posLst[2] as number;
+            TMPthis.targetX = Number(posLst[1]);
+            TMPthis.targetY = Number(posLst[2]);
           }
         }
 
@@ -448,7 +459,7 @@ export default {
           this.routePheromone(this.ants[x], this.oldAdd as number);
         } else {
           this.antMove(this.ants[x]);
-          if (this.ants[x].X == 2 && this.ants[x].Y == 10) {
+          if (this.ants[x].X == 2 && this.ants[x].Y == 11) {
             this.count--;
             this.ants[x].hp = 0;
             this.routePheromone(this.ants[x], this.goalAdd as number);
@@ -461,6 +472,7 @@ export default {
       for (x = 0; x < TMPthis.ants.length; x++) {
         var tmpAnt = TMPthis.ants[x];
         if (tmpAnt.hp <= 0 || isNaN(tmpAnt.hp)) {
+          this.decayPheromon();
           TMPthis.ants = [
             ...TMPthis.ants.slice(0, x),
             ...TMPthis.ants.slice(x + 1),
@@ -484,7 +496,7 @@ export default {
         }
       }
 
-      this.decayPheromon();
+      //this.decayPheromon();
       canvas.renderAll();
       this.round++;
     },
@@ -492,8 +504,8 @@ export default {
     generateAnt() {
       var newAnt: Ant = {
         id: this.numAnt,
-        X: 18,
-        Y: 10,
+        X: 20,
+        Y: 11,
         lastStep: -1,
         maxHp: this.newAntHP,
         hp: this.newAntHP,
@@ -501,7 +513,7 @@ export default {
       };
       this.ants.push(newAnt);
       this.antSet.add(this.numAnt);
-      Location = [30 * 10, 20 * Math.sqrt(3) * 18];
+      Location = [30 * 11, 20 * Math.sqrt(3) * 20];
 
       var imgElement = document.getElementById("antImg");
       var imgInstance = new fabric.Image(imgElement, {
@@ -525,7 +537,7 @@ export default {
       var dir: number[][];
       var prob: number[] = [];
       var totProb: number = 0;
-      if (theAnt.Y % 2)
+      if (!(theAnt.Y % 2))
         dir = [
           [-1, 0],
           [0, 1],
@@ -547,24 +559,25 @@ export default {
       for (x = 0; x < 6; x++) {
         dir[x][0] += theAnt.X;
         dir[x][1] += theAnt.Y;
-        if (dir[x][0] == 2 && dir[x][1] == 10) {
+        if (dir[x][0] == 2 && dir[x][1] == 11) {
           prob = [0, 0, 0, 0, 0, 0];
           prob[x] = 1;
           totProb = 1;
           break;
         } else if (
-          dir[x][1] < 10 - (2 * dir[x][0] + 1) ||
-          dir[x][1] > 10 + (2 * dir[x][0] + 1) ||
-          dir[x][1] < 2 * dir[x][0] - 30 ||
-          dir[x][1] > 50 - 2 * dir[x][0] ||
+          dir[x][1] < 11 - (2 * dir[x][0] + 1) ||
+          dir[x][1] > 11 + (2 * dir[x][0] + 1) ||
+          dir[x][1] < 2 * dir[x][0] - 33 ||
+          dir[x][1] > 55 - 2 * dir[x][0] ||
           dir[x][1] < 0 ||
-          dir[x][1] > 20 ||
+          dir[x][1] > 22 ||
           x - theAnt.lastStep == 3 ||
           x - theAnt.lastStep == -3
         )
           prob.push(0);
         else {
           var tmp = this.pheromone[theAnt.X][theAnt.Y][x];
+          tmp += (this.basePhe as number) * 1;
           if (x == 0) tmp *= 3;
           if (x == 1 || x == 5) tmp *= 2;
           prob.push(tmp);
@@ -582,7 +595,7 @@ export default {
           theAnt.X = dir[x][0];
           theAnt.Y = dir[x][1];
 
-          if (theAnt.Y % 2)
+          if (!(theAnt.Y % 2))
             Location = [
               30 * theAnt.Y,
               20 * Math.sqrt(3) * theAnt.X + 10 * Math.sqrt(3),
@@ -640,7 +653,7 @@ export default {
         level: 1,
       };
       this.towers.push(newTower);
-      if (this.targetY % 2)
+      if (!(this.targetY % 2))
         Location = [
           30 * this.targetY,
           20 * Math.sqrt(3) * this.targetX + 10 * Math.sqrt(3),
@@ -787,27 +800,27 @@ export default {
     },
 
     towerAttack(theTower: Tower) {
-      var damage = theTower.level * 2;
+      var damage = Math.pow(2, theTower.level);
       var range = 3 + theTower.level;
       var vis: number[][] = [];
       var X: number;
       var Y: number;
-      for (X = 0; X <= 20; X++) {
+      for (X = 0; X <= 22; X++) {
         vis.push([]);
-        for (Y = 0; Y <= 20; Y++) {
+        for (Y = 0; Y <= 22; Y++) {
           if (X == theTower.X && Y == theTower.Y) vis[X].push(0);
           else vis[X].push(-1);
         }
       }
       var r: number;
       for (r = 0; r < range; r++) {
-        for (X = 0; X <= 20; X++)
-          for (Y = 0; Y <= 20; Y++) {
+        for (X = 0; X <= 22; X++)
+          for (Y = 0; Y <= 22; Y++) {
             if (
-              Y < 10 - (2 * X + 1) ||
-              Y > 10 + (2 * X + 1) ||
-              Y < 2 * X - 30 ||
-              Y > 50 - 2 * X ||
+              Y < 11 - (2 * X + 1) ||
+              Y > 11 + (2 * X + 1) ||
+              Y < 2 * X - 33 ||
+              Y > 55 - 2 * X ||
               vis[X][Y] != r
             ) {
               continue;
@@ -834,10 +847,10 @@ export default {
             var p: number;
             for (p = 0; p < 6; p++) {
               if (
-                Y + dir[p][1] < 10 - (2 * (X + dir[p][0]) + 1) ||
-                Y + dir[p][1] > 10 + (2 * (X + dir[p][0]) + 1) ||
-                Y + dir[p][1] < 2 * (X + dir[p][0]) - 30 ||
-                Y + dir[p][1] > 50 - 2 * (X + dir[p][0])
+                Y + dir[p][1] < 11 - (2 * (X + dir[p][0]) + 1) ||
+                Y + dir[p][1] > 11 + (2 * (X + dir[p][0]) + 1) ||
+                Y + dir[p][1] < 2 * (X + dir[p][0]) - 33 ||
+                Y + dir[p][1] > 55 - 2 * (X + dir[p][0])
               )
                 continue;
               if (vis[X + dir[p][0]][Y + dir[p][1]] == -1)
@@ -868,7 +881,7 @@ export default {
         goal.hp -= damage;
 
         var Direction: number[];
-        if (goal.Y % 2)
+        if (!(goal.Y % 2))
           Direction = [
             30 * goal.Y,
             20 * Math.sqrt(3) * goal.X + 10 * Math.sqrt(3),
@@ -876,7 +889,7 @@ export default {
         else Direction = [30 * goal.Y, 20 * Math.sqrt(3) * goal.X];
 
         var Direction2: number[];
-        if (theTower.Y % 2)
+        if (!(theTower.Y % 2))
           Direction2 = [
             30 * theTower.Y,
             20 * Math.sqrt(3) * theTower.X + 10 * Math.sqrt(3),
@@ -941,11 +954,12 @@ export default {
         if (
           this.pheromone[theAnt.path[p][0]][theAnt.path[p][1]][
             theAnt.path[p][2]
-          ] < (this.minPhe as number)
+          ] <
+          (this.minPhe as number) - (this.basePhe as number)
         )
           this.pheromone[theAnt.path[p][0]][theAnt.path[p][1]][
             theAnt.path[p][2]
-          ] = (this.minPhe as number) * 1;
+          ] = (this.minPhe as number) - (this.basePhe as number);
       }
     },
 
@@ -953,18 +967,18 @@ export default {
       var X: number;
       var Y: number;
       // init canvas
-      for (X = 0; X <= 20; X++)
-        for (Y = 0; Y <= 20; Y++) {
+      for (X = 0; X <= 22; X++)
+        for (Y = 0; Y <= 22; Y++) {
           if (
-            Y < 10 - (2 * X + 1) ||
-            Y > 10 + (2 * X + 1) ||
-            Y < 2 * X - 30 ||
-            Y > 50 - 2 * X
+            Y < 11 - (2 * X + 1) ||
+            Y > 11 + (2 * X + 1) ||
+            Y < 2 * X - 33 ||
+            Y > 55 - 2 * X
           ) {
             continue;
           }
           var dir: number[][];
-          if (Y % 2)
+          if (!(Y % 2))
             dir = [
               [-1, 0],
               [0, 1],
@@ -985,17 +999,21 @@ export default {
           var p: number;
           for (p = 0; p < 6; p++) {
             if (
-              Y + dir[p][1] < 10 - (2 * (X + dir[p][0]) + 1) ||
-              Y + dir[p][1] > 10 + (2 * (X + dir[p][0]) + 1) ||
-              Y + dir[p][1] < 2 * (X + dir[p][0]) - 30 ||
-              Y + dir[p][1] > 50 - 2 * (X + dir[p][0]) ||
+              Y + dir[p][1] < 11 - (2 * (X + dir[p][0]) + 1) ||
+              Y + dir[p][1] > 11 + (2 * (X + dir[p][0]) + 1) ||
+              Y + dir[p][1] < 2 * (X + dir[p][0]) - 33 ||
+              Y + dir[p][1] > 55 - 2 * (X + dir[p][0]) ||
               Y + dir[p][1] < 0 ||
-              Y + dir[p][1] > 20
+              Y + dir[p][1] > 22
             )
               continue;
             this.pheromone[X][Y][p] *= this.decayRate as number;
-            if (this.pheromone[X][Y][p] < (this.minPhe as number))
-              this.pheromone[X][Y][p] = (this.minPhe as number) * 1;
+            if (
+              this.pheromone[X][Y][p] <
+              (this.minPhe as number) - (this.basePhe as number)
+            )
+              this.pheromone[X][Y][p] =
+                (this.minPhe as number) - (this.basePhe as number);
           }
         }
     },
